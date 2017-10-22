@@ -6,6 +6,7 @@ package com.nesmelov.findme;
  * and open the template in the editor.
  */
 
+import com.nesmelov.findme.service.TomcatService;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -27,6 +28,8 @@ import org.json.JSONObject;*/
  */
 @WebServlet(urlPatterns = {"/Server"})
 public class Server extends HttpServlet {
+    private TomcatService tomcatService = new TomcatService();
+    
     private static final String STATUS_OK = "{\"status\": \"ok\"}";
     private static final String STATUS_NOK = "{\"status\": \"nok\"}";
     private static final String STATUS_ALREADY_EXISTS = "{\"status\": \"already_exists\"}";
@@ -64,7 +67,7 @@ public class Server extends HttpServlet {
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         response.setContentType("text/html;charset=UTF-8");
-        
+        tomcatService.getAllEntries();
         String responseString = STATUS_NOK;
         //try {
             //final String action = request.getParameter(ACTION);
