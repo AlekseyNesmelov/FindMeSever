@@ -1,4 +1,4 @@
-package websocket.chat;
+package com.nesmelov.findme;
 
 public class Position {
     public static final double BAD_VALUE = -999.0;

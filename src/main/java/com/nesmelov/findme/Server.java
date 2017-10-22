@@ -1,4 +1,4 @@
-package websocket.chat;
+package com.nesmelov.findme;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -26,7 +26,7 @@ import org.json.JSONObject;*/
  * @author 70508
  */
 @WebServlet(urlPatterns = {"/Server"})
-public class ChatAnnotation extends HttpServlet {
+public class Server extends HttpServlet {
     private static final String STATUS_OK = "{\"status\": \"ok\"}";
     private static final String STATUS_NOK = "{\"status\": \"nok\"}";
     private static final String STATUS_ALREADY_EXISTS = "{\"status\": \"already_exists\"}";
