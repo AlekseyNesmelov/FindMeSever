@@ -17,10 +17,10 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-/*import org.json.HTTP;
+/*import org.json.HTTP;*/
 import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;*/
+import org.json.JSONObject;
 
 /**
  *
@@ -28,8 +28,6 @@ import org.json.JSONObject;*/
  */
 @WebServlet(urlPatterns = {"/Server"})
 public class Server extends HttpServlet {
-    private TomcatService tomcatService = new TomcatService();
-    
     private static final String STATUS_OK = "{\"status\": \"ok\"}";
     private static final String STATUS_NOK = "{\"status\": \"nok\"}";
     private static final String STATUS_ALREADY_EXISTS = "{\"status\": \"already_exists\"}";
@@ -67,98 +65,61 @@ public class Server extends HttpServlet {
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         response.setContentType("text/html;charset=UTF-8");
-        tomcatService.getAllEntries();
+        
         String responseString = STATUS_NOK;
-        //try {
-            //final String action = request.getParameter(ACTION);
-            /*switch (action) {
-                case ACTION_ADD: {
-                    final JSONObject body = getBody(request);
-                    final Integer user = body.getInt(USER);*/
-                    /*if (DataAccess.getInstance().addUser(user)) {*/
-                        //responseString = STATUS_OK;
-                    /*} else {
-                        responseString = STATUS_ALREADY_EXISTS;
-                    }*/
-                    /*break;
-                }
-                case ACTION_CHECK: {
-                    final JSONObject body = getBody(request);
-                    final JSONArray users = body.getJSONArray(USERS);
-                    //final JSONArray existsUsers = DataAccess.getInstance().checkUsers(users);
-                    final JSONObject jsonObject = new JSONObject();
-                    jsonObject.put(USERS, new JSONArray()existsUsers*///);
-                    /*responseString = jsonObject.toString();
-                    break;
-                }
-                case ACTION_SET_VISIBLE: {
-                    final JSONObject body = getBody(request);
-                    final Integer user = body.getInt(USER);
-                    final Boolean visible = body.getBoolean(VISIBLE);
-                    if (visible) {
-                        final Double lat = body.getDouble(LAT);
-                        final Double lon = body.getDouble(LON);
-                        final Position pos = new Position(lat, lon);
-                        mUsersInfo.put(user, pos);
-                    } else {
-                        mUsersInfo.remove(user);
-                    }
+        try {
+            final String action = request.getParameter(ACTION);
+            if (ACTION_ADD.equals(action)) {
+                final JSONObject body = getBody(request);
+                final Integer user = body.getInt(USER);
+                /*if (DataAccess.getInstance().addUser(user)) {*/
                     responseString = STATUS_OK;
-                    break;
-                }
-                case ACTION_SET_POS: {
-                    final JSONObject body = getBody(request);
-                    final Integer user = body.getInt(USER);
+                /*} else {
+                    responseString = STATUS_ALREADY_EXISTS;
+                }*/
+            } else if (ACTION_CHECK.equals(action)) {
+                final JSONObject body = getBody(request);
+                final JSONArray users = body.getJSONArray(USERS);
+                //final JSONArray existsUsers = DataAccess.getInstance().checkUsers(users);
+                final JSONObject jsonObject = new JSONObject();
+                jsonObject.put(USERS, new JSONArray()/*existsUsers*/);
+                responseString = jsonObject.toString();
+            } else if (ACTION_SET_VISIBLE.equals(action)) {
+                final JSONObject body = getBody(request);
+                final Integer user = body.getInt(USER);
+                final Boolean visible = body.getBoolean(VISIBLE);
+                if (visible) {
                     final Double lat = body.getDouble(LAT);
                     final Double lon = body.getDouble(LON);
-                    
+                    final Position pos = new Position(lat, lon);
+                    mUsersInfo.put(user, pos);
+                } else {
+                    mUsersInfo.remove(user);
+                }
+                responseString = STATUS_OK;
+            } else if (ACTION_SET_POS.equals(action)) {
+                final JSONObject body = getBody(request);
+                final Integer user = body.getInt(USER);
+                final Double lat = body.getDouble(LAT);
+                final Double lon = body.getDouble(LON);
+
+                if (mUsersInfo.containsKey(user)) {
+                    final Position pos = mUsersInfo.get(user);
+                    pos.setLat(lat);
+                    pos.setLon(lon);
+                    responseString = STATUS_OK;
+                } else {
+                    responseString = STATUS_NOK;
+                }
+            } else if (ACTION_GET_POS.equals(action)) {
+                final JSONObject body = getBody(request);
+                final JSONArray users = body.getJSONArray(USERS);
+
+                final JSONObject responseJson = new JSONObject();
+                final JSONArray responseUsers = new JSONArray();
+                for (int i = 0; i < users.length(); i++) {
+                    final Integer user = users.getInt(i);
                     if (mUsersInfo.containsKey(user)) {
-                        final Position pos = mUsersInfo.get(user);
-                        pos.setLat(lat);
-                        pos.setLon(lon);
-                        responseString = STATUS_OK;
-                    } else {
-                        responseString = STATUS_NOK;
-                    }
-                    break;
-                }
-                case ACTION_GET_POS: {
-                    final JSONObject body = getBody(request);
-                    final JSONArray users = body.getJSONArray(USERS);
-                    
-                    final JSONObject responseJson = new JSONObject();
-                    final JSONArray responseUsers = new JSONArray();
-                    for (int i = 0; i < users.length(); i++) {
-                        final Integer user = users.getInt(i);
-                        if (mUsersInfo.containsKey(user)) {
-                            final Position pos = mUsersInfo.get(user);
-                            final JSONObject o = new JSONObject();
-                            o.put(USER, user);
-                            o.put(LAT, pos.getLat());
-                            o.put(LON, pos.getLon());
-                            responseUsers.put(o);
-                        }
-                    }
-                    responseJson.put(USERS, responseUsers);
-                    responseString = responseJson.toString();
-                    break;
-                }
-                case ACTION_GET_DATABASE_ERRORS: {
-                    final JSONObject errors = new JSONObject();*/
-                    //errors.put(ERRORS, /*DataAccess.getInstance().getErrorMessage()*/"");
-                    /*responseString = errors.toString();
-                    break;
-                }
-                case ACTION_GET_SERVLET_ERRORS: {
-                    final JSONObject errors = new JSONObject();
-                    errors.put(ERRORS, mErrorMessage.toString());
-                    responseString = errors.toString();
-                    break;
-                }
-                case ACTION_GET_USERS_INFO: {
-                    final JSONObject responseJson = new JSONObject();
-                    final JSONArray responseUsers = new JSONArray();
-                    for (final Integer user : mUsersInfo.keySet()) {     
                         final Position pos = mUsersInfo.get(user);
                         final JSONObject o = new JSONObject();
                         o.put(USER, user);
@@ -166,27 +127,46 @@ public class Server extends HttpServlet {
                         o.put(LON, pos.getLon());
                         responseUsers.put(o);
                     }
-                    responseJson.put(USERS, responseUsers);
-                    responseString = responseJson.toString();
-                    break;
                 }
-                default:
-                    break;*/
-            //}
-        /*} catch (Exception e) {
+                responseJson.put(USERS, responseUsers);
+                responseString = responseJson.toString();
+            } else if (ACTION_GET_DATABASE_ERRORS.equals(action)) {
+                final JSONObject errors = new JSONObject();
+                errors.put(ERRORS, /*DataAccess.getInstance().getErrorMessage()*/"");
+                responseString = errors.toString();
+            } else if (ACTION_GET_SERVLET_ERRORS.equals(action)) {
+                final JSONObject errors = new JSONObject();
+                errors.put(ERRORS, mErrorMessage.toString());
+                responseString = errors.toString();
+            } else if (ACTION_GET_USERS_INFO.equals(action)) {
+                final JSONObject responseJson = new JSONObject();
+                final JSONArray responseUsers = new JSONArray();
+                for (final Integer user : mUsersInfo.keySet()) {     
+                    final Position pos = mUsersInfo.get(user);
+                    final JSONObject o = new JSONObject();
+                    o.put(USER, user);
+                    o.put(LAT, pos.getLat());
+                    o.put(LON, pos.getLon());
+                    responseUsers.put(o);
+                }
+                responseJson.put(USERS, responseUsers);
+                responseString = responseJson.toString();
+            }
+        } catch (Exception e) {
             mErrorMessage.append("\n").append(e.toString());
-        } finally {*/
-        
-        PrintWriter out = response.getWriter();
-        out.println(responseString);
-        out.flush();
-        out.close();
-            /*try () {
-                
+        } finally {
+            PrintWriter out = null;
+            try {
+                out = response.getWriter();
+                out.println(responseString);
             } catch (Exception e) {
                 mErrorMessage.append("\n").append(e.toString());
-            }*/
-        /*}*/
+            } finally {
+                if (out != null) {
+                    out.close();
+                }
+            }
+        }
     }
 
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
@@ -228,9 +208,9 @@ public class Server extends HttpServlet {
         return "Short description";
     }// </editor-fold>
     
-    @Override
+     @Override
     public void init() {
-        //mUsersInfo = new ConcurrentHashMap<>();//DataAccess.getInstance().getAllRecords();
+        mUsersInfo = new ConcurrentHashMap<Integer, Position>();//DataAccess.getInstance().getAllRecords();
     }
 
     @Override
@@ -238,11 +218,11 @@ public class Server extends HttpServlet {
         //DataAccess.getInstance().refreshRecords(mUsersInfo);
     }
     
-    /*private JSONObject getBody(final HttpServletRequest request) {
+    private JSONObject getBody(final HttpServletRequest request) {
         final StringBuffer jb = new StringBuffer();
         String line;
         try {
-            BufferedReader reader = request.getReader();
+            final BufferedReader reader = request.getReader();
             while ((line = reader.readLine()) != null) {
                 jb.append(line);
             }
@@ -251,5 +231,5 @@ public class Server extends HttpServlet {
         }  
         
         return new JSONObject(jb.toString());
-    }*/
+    }
 }
