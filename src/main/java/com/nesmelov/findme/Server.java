@@ -19,7 +19,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 /*import org.json.HTTP;*/
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
@@ -28,9 +27,9 @@ import org.json.JSONObject;
  */
 @WebServlet(urlPatterns = {"/Server"})
 public class Server extends HttpServlet {
-    private static final String STATUS_OK = "{\"status\": \"ok\"}";
-    private static final String STATUS_NOK = "{\"status\": \"nok\"}";
-    private static final String STATUS_ALREADY_EXISTS = "{\"status\": \"already_exists\"}";
+    private static final JSONObject STATUS_OK = new JSONObject("{\"status\": \"ok\"}");
+    private static final JSONObject STATUS_NOK = new JSONObject("{\"status\": \"nok\"}");
+    private static final JSONObject STATUS_ALREADY_EXISTS = new JSONObject("{\"status\": \"already_exists\"}");
     private static final String ACTION = "action";
     private static final String ACTION_CHECK = "check";
     private static final String ACTION_ADD = "add";
@@ -65,15 +64,16 @@ public class Server extends HttpServlet {
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
         
-        String responseString = STATUS_NOK;
+        JSONObject responseObject = STATUS_NOK;
         try {
             final String action = request.getParameter(ACTION);
             if (ACTION_ADD.equals(action)) {
                 final JSONObject body = getBody(request);
                 final Integer user = body.getInt(USER);
                 /*if (DataAccess.getInstance().addUser(user)) {*/
-                    responseString = STATUS_OK;
+                    responseObject = STATUS_OK;
                 /*} else {
                     responseString = STATUS_ALREADY_EXISTS;
                 }*/
@@ -83,7 +83,7 @@ public class Server extends HttpServlet {
                 //final JSONArray existsUsers = DataAccess.getInstance().checkUsers(users);
                 final JSONObject jsonObject = new JSONObject();
                 jsonObject.put(USERS, new JSONArray()/*existsUsers*/);
-                responseString = jsonObject.toString();
+                responseObject = jsonObject;
             } else if (ACTION_SET_VISIBLE.equals(action)) {
                 final JSONObject body = getBody(request);
                 final Integer user = body.getInt(USER);
@@ -96,7 +96,7 @@ public class Server extends HttpServlet {
                 } else {
                     mUsersInfo.remove(user);
                 }
-                responseString = STATUS_OK;
+                responseObject = STATUS_OK;
             } else if (ACTION_SET_POS.equals(action)) {
                 final JSONObject body = getBody(request);
                 final Integer user = body.getInt(USER);
@@ -107,9 +107,9 @@ public class Server extends HttpServlet {
                     final Position pos = mUsersInfo.get(user);
                     pos.setLat(lat);
                     pos.setLon(lon);
-                    responseString = STATUS_OK;
+                    responseObject = STATUS_OK;
                 } else {
-                    responseString = STATUS_NOK;
+                    responseObject = STATUS_NOK;
                 }
             } else if (ACTION_GET_POS.equals(action)) {
                 final JSONObject body = getBody(request);
@@ -129,15 +129,15 @@ public class Server extends HttpServlet {
                     }
                 }
                 responseJson.put(USERS, responseUsers);
-                responseString = responseJson.toString();
+                responseObject = responseJson;
             } else if (ACTION_GET_DATABASE_ERRORS.equals(action)) {
                 final JSONObject errors = new JSONObject();
                 errors.put(ERRORS, /*DataAccess.getInstance().getErrorMessage()*/"");
-                responseString = errors.toString();
+                responseObject = errors;
             } else if (ACTION_GET_SERVLET_ERRORS.equals(action)) {
                 final JSONObject errors = new JSONObject();
                 errors.put(ERRORS, mErrorMessage.toString());
-                responseString = errors.toString();
+                responseObject = errors;
             } else if (ACTION_GET_USERS_INFO.equals(action)) {
                 final JSONObject responseJson = new JSONObject();
                 final JSONArray responseUsers = new JSONArray();
@@ -150,7 +150,7 @@ public class Server extends HttpServlet {
                     responseUsers.put(o);
                 }
                 responseJson.put(USERS, responseUsers);
-                responseString = responseJson.toString();
+                responseObject = responseJson;
             }
         } catch (Exception e) {
             mErrorMessage.append("\n").append(e.toString());
@@ -158,7 +158,7 @@ public class Server extends HttpServlet {
             PrintWriter out = null;
             try {
                 out = response.getWriter();
-                out.println(responseString);
+                out.print(responseObject);
             } catch (Exception e) {
                 mErrorMessage.append("\n").append(e.toString());
             } finally {
