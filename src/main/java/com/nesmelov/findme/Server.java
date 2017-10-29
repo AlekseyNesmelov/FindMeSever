@@ -72,17 +72,17 @@ public class Server extends HttpServlet {
             if (ACTION_ADD.equals(action)) {
                 final JSONObject body = getBody(request);
                 final Integer user = body.getInt(USER);
-                /*if (DataAccess.getInstance().addUser(user)) {*/
+                if (DataAccess.getInstance().addUser(user)) {
                     responseObject = STATUS_OK;
-                /*} else {
-                    responseString = STATUS_ALREADY_EXISTS;
-                }*/
+                } else {
+                    responseObject = STATUS_ALREADY_EXISTS;
+                }
             } else if (ACTION_CHECK.equals(action)) {
                 final JSONObject body = getBody(request);
                 final JSONArray users = body.getJSONArray(USERS);
-                //final JSONArray existsUsers = DataAccess.getInstance().checkUsers(users);
+                final JSONArray existsUsers = DataAccess.getInstance().checkUsers(users);
                 final JSONObject jsonObject = new JSONObject();
-                jsonObject.put(USERS, new JSONArray()/*existsUsers*/);
+                jsonObject.put(USERS, existsUsers);
                 responseObject = jsonObject;
             } else if (ACTION_SET_VISIBLE.equals(action)) {
                 final JSONObject body = getBody(request);
@@ -210,12 +210,13 @@ public class Server extends HttpServlet {
     
      @Override
     public void init() {
-        mUsersInfo = new ConcurrentHashMap<Integer, Position>();//DataAccess.getInstance().getAllRecords();
+        DataAccess.getInstance().init();
+        mUsersInfo = DataAccess.getInstance().getAllRecords();
     }
 
     @Override
     public void destroy() {
-        //DataAccess.getInstance().refreshRecords(mUsersInfo);
+        DataAccess.getInstance().refreshRecords(mUsersInfo);
     }
     
     private JSONObject getBody(final HttpServletRequest request) {
