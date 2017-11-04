@@ -6,20 +6,26 @@ package com.nesmelov.findme;
  * and open the template in the editor.
  */
 
-import com.nesmelov.findme.service.TomcatService;
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-/*import org.json.HTTP;*/
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.w3c.dom.UserDataHandler;
 
 /**
  *
@@ -27,6 +33,8 @@ import org.json.JSONObject;
  */
 @WebServlet(urlPatterns = {"/Server"})
 public class Server extends HttpServlet {
+    private static final String USERS_FILE = "users.txt";
+    
     private static final JSONObject STATUS_OK = new JSONObject("{\"status\": \"ok\"}");
     private static final JSONObject STATUS_NOK = new JSONObject("{\"status\": \"nok\"}");
     private static final JSONObject STATUS_ALREADY_EXISTS = new JSONObject("{\"status\": \"already_exists\"}");
@@ -49,6 +57,7 @@ public class Server extends HttpServlet {
     private static final String USERS_INFO = "info";
     
     private static Map<Integer, Position> mUsersInfo;
+    private static Map<Integer, UserInfo> mUsersDataStorage;
     
     private final StringBuilder mErrorMessage = new StringBuilder();
     
@@ -72,15 +81,24 @@ public class Server extends HttpServlet {
             if (ACTION_ADD.equals(action)) {
                 final JSONObject body = getBody(request);
                 final Integer user = body.getInt(USER);
-                if (DataAccess.getInstance().addUser(user)) {
-                    responseObject = STATUS_OK;
-                } else {
+                if (mUsersDataStorage.containsKey(user)) {
                     responseObject = STATUS_ALREADY_EXISTS;
+                } else {
+                    mUsersDataStorage.put(user, new UserInfo(false, new Position()));
+                    responseObject = STATUS_OK;
                 }
             } else if (ACTION_CHECK.equals(action)) {
                 final JSONObject body = getBody(request);
                 final JSONArray users = body.getJSONArray(USERS);
-                final JSONArray existsUsers = DataAccess.getInstance().checkUsers(users);
+                
+                final JSONArray existsUsers = new JSONArray();
+                for (int i = 0; i < users.length(); i++) {
+                    final Integer vkId = users.getInt(i);
+                    if (mUsersDataStorage.containsKey(vkId)) {
+                        existsUsers.put(vkId);
+                    }
+                }
+
                 final JSONObject jsonObject = new JSONObject();
                 jsonObject.put(USERS, existsUsers);
                 responseObject = jsonObject;
@@ -88,6 +106,10 @@ public class Server extends HttpServlet {
                 final JSONObject body = getBody(request);
                 final Integer user = body.getInt(USER);
                 final Boolean visible = body.getBoolean(VISIBLE);
+                final UserInfo ui = mUsersDataStorage.get(user);
+                if (ui != null) {
+                    ui.setVisible(true);
+                }
                 if (visible) {
                     final Double lat = body.getDouble(LAT);
                     final Double lon = body.getDouble(LON);
@@ -102,7 +124,10 @@ public class Server extends HttpServlet {
                 final Integer user = body.getInt(USER);
                 final Double lat = body.getDouble(LAT);
                 final Double lon = body.getDouble(LON);
-
+                final UserInfo ui = mUsersDataStorage.get(user);
+                if (ui != null) {
+                    ui.getPosition().setLatLon(lat, lon);
+                }
                 if (mUsersInfo.containsKey(user)) {
                     final Position pos = mUsersInfo.get(user);
                     pos.setLat(lat);
@@ -210,13 +235,53 @@ public class Server extends HttpServlet {
     
      @Override
     public void init() {
-        DataAccess.getInstance().init();
-        mUsersInfo = DataAccess.getInstance().getAllRecords();
+       mUsersInfo = new ConcurrentHashMap<Integer, Position>();
+       mUsersDataStorage = new ConcurrentHashMap<Integer, UserInfo>();
+       BufferedReader br = null;
+        try {
+            br = new BufferedReader(new FileReader(USERS_FILE));
+            String line = br.readLine();
+            while (line != null) {
+                line = br.readLine();
+                final String[] usersInfo = line.split(";");
+                if (usersInfo.length == 4) {
+                    final Integer vkId = Integer.valueOf(usersInfo[0]);
+                    final Double lat = Double.valueOf(usersInfo[1]);
+                    final Double lon = Double.valueOf(usersInfo[2]);
+                    final Boolean visible = Boolean.valueOf(usersInfo[3]);
+                    final Position pos = new Position(lat, lon);
+                    mUsersInfo.put(vkId, pos);
+                    mUsersDataStorage.put(vkId, new UserInfo(visible, pos));
+                }
+            }
+        } catch (Exception ignored) {
+        } finally {
+            if (br != null) {
+                try {
+                    br.close();
+                } catch (IOException ex) {
+                }
+            }
+        }
     }
 
     @Override
     public void destroy() {
-        DataAccess.getInstance().refreshRecords(mUsersInfo);
+        PrintWriter pw = null;
+        try {
+            pw = new PrintWriter(USERS_FILE);
+            for (final Integer user : mUsersDataStorage.keySet()) {
+                final UserInfo userInfo = mUsersDataStorage.get(user);
+                pw.println(user + ";" + userInfo.getPosition().getLat() + ";" +
+                        userInfo.getPosition().getLon() + ";" + userInfo.getVisibility());
+            }
+            pw.flush();
+        } catch (IOException ignored) {     
+        } finally {
+            if (pw != null) {
+                pw.close();
+            }
+        }
     }
     
     private JSONObject getBody(final HttpServletRequest request) {
