@@ -237,7 +237,7 @@ public class Server extends HttpServlet {
     public void init() {
        mUsersInfo = new ConcurrentHashMap<Integer, Position>();
        mUsersDataStorage = new ConcurrentHashMap<Integer, UserInfo>();
-       BufferedReader br = null;
+       /*BufferedReader br = null;
         try {
             br = new BufferedReader(new FileReader(USERS_FILE));
             String line = br.readLine();
@@ -262,12 +262,12 @@ public class Server extends HttpServlet {
                 } catch (IOException ex) {
                 }
             }
-        }
+        }*/
     }
 
     @Override
     public void destroy() {
-        PrintWriter pw = null;
+        /*PrintWriter pw = null;
         try {
             pw = new PrintWriter(USERS_FILE);
             for (final Integer user : mUsersDataStorage.keySet()) {
@@ -281,7 +281,7 @@ public class Server extends HttpServlet {
             if (pw != null) {
                 pw.close();
             }
-        }
+        }*/
     }
     
     private JSONObject getBody(final HttpServletRequest request) {
